@@ -110,7 +110,7 @@ public final class NeoSyncDebug {
     }
 
     private static boolean enabled() {
-        return SyncConfig.getInstance().enableDebugLogging();
+        return true;
     }
 
     private static String round(double value) {

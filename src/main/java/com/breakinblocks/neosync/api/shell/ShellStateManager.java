@@ -99,29 +99,4 @@ public interface ShellStateManager {
         return state != null && state.getUuid() != null && state.getOwnerUuid() != null;
     }
 
-    /**
-     * Returns a list of pending updates by owner uuid.
-     *
-     * @param owner UUID of the shell owner.
-     * @return A list of pending updates by owner uuid.
-     */
-    Collection<Tuple<ShellStateUpdateType, ShellState>> peekPendingUpdates(UUID owner);
-
-    /**
-     * Clears all pending updates for the given shell owner.
-     * @param owner UUID of the shell owner.
-     */
-    void clearPendingUpdates(UUID owner);
-
-    /**
-     * Clears all pending updates for the given shell owner.
-     *
-     * @param owner UUID of the shell owner.
-     * @return A list of pending updates by owner uuid.
-     */
-    default Collection<Tuple<ShellStateUpdateType, ShellState>> popPendingUpdates(UUID owner) {
-        Collection<Tuple<ShellStateUpdateType, ShellState>> updates = this.peekPendingUpdates(owner);
-        this.clearPendingUpdates(owner);
-        return updates;
-    }
 }

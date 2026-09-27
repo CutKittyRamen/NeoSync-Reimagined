@@ -91,11 +91,4 @@ public interface Shell extends ShellStateManager {
         }
     }
 
-    @Override
-    default Collection<Tuple<ShellStateUpdateType, ShellState>> peekPendingUpdates(UUID owner) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    default void clearPendingUpdates(UUID owner) { }
 }

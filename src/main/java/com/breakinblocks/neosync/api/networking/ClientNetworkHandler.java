@@ -31,7 +31,7 @@ public final class ClientNetworkHandler {
         if (player == null) return;
         Shell shell = (Shell) player;
         shell.changeArtificialStatus(payload.isArtificial());
-        shell.setDeathSyncEnabled(payload.autoSyncOnDeath());
+        //shell.setDeathSyncEnabled(payload.autoSyncOnDeath());
         shell.setAvailableShellStates(payload.states().stream());
     }
 

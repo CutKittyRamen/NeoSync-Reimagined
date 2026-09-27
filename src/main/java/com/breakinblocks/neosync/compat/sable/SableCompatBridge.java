@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-interface SableCompatBridge {
+public interface SableCompatBridge {
     @Nullable
     default Object getTrackingSublevel(Entity entity) { return null; }
 

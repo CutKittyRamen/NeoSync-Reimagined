@@ -135,8 +135,7 @@ public class SimpleInventory implements Container, Nameable {
                 if (!inventory.get(i).isEmpty()) {
                     CompoundTag compound = new CompoundTag();
                     compound.putByte("Slot", (byte)(i + delta));
-                    inventory.get(i).save(registries, compound);
-                    nbtList.add(compound);
+                    nbtList.add(inventory.get(i).save(registries, compound));
                 }
             }
         }
@@ -168,7 +167,7 @@ public class SimpleInventory implements Container, Nameable {
         int thisSize = this.getContainerSize();
         int otherSize = other.getContainerSize();
         for(int i = 0; i < thisSize; ++i) {
-            this.setItem(i, i < otherSize ? other.getItem(i) : ItemStack.EMPTY);
+            this.setItem(i, i < otherSize ? other.getItem(i).copy() : ItemStack.EMPTY);
         }
 
         if (other instanceof Inventory playerInventory) {
@@ -182,7 +181,7 @@ public class SimpleInventory implements Container, Nameable {
         int thisSize = this.getContainerSize();
         int otherSize = other.getContainerSize();
         for(int i = 0; i < otherSize; ++i) {
-            other.setItem(i, i < thisSize ? this.getItem(i) : ItemStack.EMPTY);
+            other.setItem(i, i < thisSize ? this.getItem(i).copy() : ItemStack.EMPTY);
         }
 
         if (other instanceof Inventory playerInventory) {

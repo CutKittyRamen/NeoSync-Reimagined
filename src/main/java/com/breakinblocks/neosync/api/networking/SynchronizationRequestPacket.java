@@ -59,9 +59,7 @@ public record SynchronizationRequestPacket(Optional<UUID> shellUuid) implements 
                     .orElse(player.getDirection().getOpposite());
 
             Either<ShellState, PlayerSyncEvents.SyncFailureReason> result = shell.sync(state);
-            if (shell.getPendingSyncTarget() != null) {
-                return;
-            }
+
 
             result.ifLeft(storedState -> {
                 if (state == null) {
