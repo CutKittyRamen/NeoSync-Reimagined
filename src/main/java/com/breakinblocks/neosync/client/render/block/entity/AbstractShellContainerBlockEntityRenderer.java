@@ -23,21 +23,19 @@ public abstract class AbstractShellContainerBlockEntityRenderer<T extends Abstra
 
     @Override
     public void render(T blockEntity, float tickDelta, PoseStack matrices, MultiBufferSource vertexConsumers, int light, int overlay) {
-        super.render(blockEntity, tickDelta, matrices, vertexConsumers, light, overlay);
-
         BlockState blockState = this.getBlockState(blockEntity);
 
         // Only render the shell entity from the lower half.
         // The block model itself still renders both halves through DoubleBlockModel.
-        if (!AbstractShellContainerBlock.isBottom(blockState)) {
-            return;
+        if (AbstractShellContainerBlock.isBottom(blockState)) {
+            ShellState shellState = blockEntity.getShellState();
+
+            if (shellState != null) {
+                this.renderShell(shellState, blockEntity, tickDelta, blockState, matrices, vertexConsumers, light);
+            }
         }
 
-        ShellState shellState = blockEntity.getShellState();
-
-        if (shellState != null) {
-            this.renderShell(shellState, blockEntity, tickDelta, blockState, matrices, vertexConsumers, light);
-        }
+        super.render(blockEntity, tickDelta, matrices, vertexConsumers, light, overlay);
     }
 
     protected void renderShell(ShellState shellState, T blockEntity, float tickDelta, BlockState blockState, PoseStack matrices, MultiBufferSource vertexConsumers, int light) {
