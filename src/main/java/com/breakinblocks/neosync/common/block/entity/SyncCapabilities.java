@@ -19,6 +19,11 @@ public final class SyncCapabilities {
 
         event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK,
+                SyncBlockEntities.MANUAL_SHELL_STORAGE.get(),
+                (be, side) -> be);
+
+        event.registerBlockEntity(
+                Capabilities.EnergyStorage.BLOCK,
                 SyncBlockEntities.SHELL_CONSTRUCTOR.get(),
                 (be, side) -> be);
 
@@ -28,4 +33,3 @@ public final class SyncCapabilities {
                 (be, side) -> be);
     }
 }
-

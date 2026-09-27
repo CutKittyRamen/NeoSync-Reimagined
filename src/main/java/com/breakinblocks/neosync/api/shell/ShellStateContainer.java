@@ -1,13 +1,15 @@
 package com.breakinblocks.neosync.api.shell;
 
-import com.breakinblocks.neosync.common.block.AbstractShellContainerBlock;
-import com.breakinblocks.neosync.common.utils.NeoSyncDebug;
+import com.breakinblocks.neosync.compat.sable.SableCompat;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 /**
  * A container that can store player's shell.
@@ -18,26 +20,48 @@ public interface ShellStateContainer {
      */
     @Nullable
     static ShellStateContainer find(Level world, BlockPos pos) {
-        BlockPos containerPos = getContainerBottomPos(world, pos);
-        BlockEntity blockEntity = world.getBlockEntity(containerPos);
-
-        if (blockEntity instanceof ShellStateContainer container) {
-            NeoSyncDebug.info("shell-container", "find success input={} bottom={} be={}", NeoSyncDebug.describe(world, pos), NeoSyncDebug.describe(world, containerPos), blockEntity.getClass().getSimpleName());
-            return container;
-        }
-
-        NeoSyncDebug.warn("shell-container", "find failed input={} bottom={} block={}", NeoSyncDebug.describe(world, pos), NeoSyncDebug.describe(world, containerPos), blockEntity);
-        return null;
+        if (!world.isLoaded(pos)) return null;
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+        return blockEntity instanceof ShellStateContainer container ? container : null;
     }
 
-    static BlockPos getContainerBottomPos(Level world, BlockPos pos) {
-        BlockState state = world.getBlockState(pos);
-
-        if (state.hasProperty(AbstractShellContainerBlock.HALF) && !AbstractShellContainerBlock.isBottom(state)) {
-            return pos.below();
+    @Nullable
+    static ShellStateContainer findNear(Entity entity) {
+        Object sublevel = SableCompat.getTrackingSublevel(entity);
+        if (sublevel != null) {
+            Vec3 local = SableCompat.worldToLocal(sublevel, entity.position());
+            BlockEntity be = SableCompat.getSublevelBlockEntity(sublevel, BlockPos.containing(local));
+            if (be instanceof ShellStateContainer container) return container;
         }
+        return find(entity.level(), entity.blockPosition());
+    }
 
-        return pos;
+    @Nullable
+    static ShellStateContainer findAt(Level world, BlockPos pos, Entity sublevelContext) {
+        return findAt(world, pos, null, sublevelContext, null);
+    }
+
+    @Nullable
+    static ShellStateContainer findAt(Level world, BlockPos pos, @Nullable Vec3 localPos, @Nullable Entity sublevelContext, @Nullable UUID sublevelHint) {
+        if (sublevelHint != null) {
+            Object sublevel = SableCompat.findSublevelByUuid(world, sublevelHint);
+            ShellStateContainer hit = lookupInSublevel(sublevel, pos, localPos);
+            if (hit != null) return hit;
+        }
+        if (sublevelContext != null) {
+            Object sublevel = SableCompat.getTrackingSublevel(sublevelContext);
+            ShellStateContainer hit = lookupInSublevel(sublevel, pos, localPos);
+            if (hit != null) return hit;
+        }
+        return find(world, pos);
+    }
+
+    @Nullable
+    private static ShellStateContainer lookupInSublevel(@Nullable Object sublevel, BlockPos worldPos, @Nullable Vec3 localPos) {
+        if (sublevel == null) return null;
+        Vec3 local = localPos != null ? localPos : SableCompat.worldToLocal(sublevel, Vec3.atCenterOf(worldPos));
+        BlockEntity be = SableCompat.getSublevelBlockEntity(sublevel, BlockPos.containing(local));
+        return be instanceof ShellStateContainer container ? container : null;
     }
 
     /**
@@ -46,11 +70,9 @@ public interface ShellStateContainer {
     @Nullable
     static ShellStateContainer find(Level world, ShellState state) {
         ShellStateContainer container = find(world, state.getPos());
-
         if (container != null && container.getShellState() == state) {
             return container;
         }
-
         return null;
     }
 

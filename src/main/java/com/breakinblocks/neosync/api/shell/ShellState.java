@@ -8,25 +8,30 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.util.StringUtil;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import com.breakinblocks.neosync.common.block.entity.ShellEntity;
 import com.breakinblocks.neosync.common.item.SimpleInventory;
 import com.breakinblocks.neosync.common.utils.WorldUtil;
+import com.breakinblocks.neosync.compat.sable.SableCompat;
+import org.jetbrains.annotations.Nullable;
 import com.breakinblocks.neosync.common.utils.math.Radians;
 import com.breakinblocks.neosync.common.utils.nbt.NbtSerializer;
 import com.breakinblocks.neosync.common.utils.nbt.NbtSerializerFactory;
 import com.breakinblocks.neosync.common.utils.nbt.NbtSerializerFactoryBuilder;
 import com.breakinblocks.neosync.common.utils.nbt.SyncRegistries;
-import com.breakinblocks.neosync.integration.dragonsurvival.DragonSurvivalShellStateComponent;
-import com.breakinblocks.neosync.integration.dragonsurvival.NeoSyncDragonSurvivalCompat;
+import com.mojang.authlib.properties.Property;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -41,6 +46,7 @@ public class ShellState {
     public static final float PROGRESS_DONE = 1F;
     public static final float PROGRESS_PRINTING = 0.75F;
     public static final float PROGRESS_PAINTING = PROGRESS_DONE - PROGRESS_PRINTING;
+    public static final int MAX_NAME_LENGTH = 32;
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ShellState> STREAM_CODEC = StreamCodec.of(
             (buf, state) -> {
@@ -64,12 +70,18 @@ public class ShellState {
     private static final NbtSerializerFactory<ShellState> NBT_SERIALIZER_FACTORY;
 
     private UUID uuid;
+    private String name;
     private float progress;
     private DyeColor color;
     private boolean isArtificial;
+    private boolean isVirtual;
+    private boolean isTemporary;
+    private boolean manualOnly;
 
     private UUID ownerUuid;
     private String ownerName;
+    private String textureValue;
+    private String textureSignature;
     private float health;
     private int gameMode;
     private SimpleInventory inventory;
@@ -85,11 +97,39 @@ public class ShellState {
 
     private ResourceLocation world;
     private BlockPos pos;
+    private UUID subLevelUuid;
+    private Vec3 localOffset;
+    private float yawDelta;
 
     private final NbtSerializer<ShellState> serializer;
 
     public UUID getUuid() {
         return this.uuid;
+    }
+
+    @Nullable
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(@Nullable String name) {
+        String filtered = name == null ? null : StringUtil.filterText(name).trim();
+        this.name = filtered == null || filtered.isEmpty()
+                ? null
+                : StringUtil.truncateStringIfNecessary(filtered, MAX_NAME_LENGTH, false);
+    }
+
+    public boolean hasName() {
+        return this.name != null;
+    }
+
+    public Component getDisplayName() {
+        if (this.name != null) {
+            return Component.literal(this.name);
+        }
+        return this.pos == null
+                ? Component.empty()
+                : Component.translatable("gui.neosync.shell_selector.position", this.pos.getX(), this.pos.getY(), this.pos.getZ());
     }
 
     public DyeColor getColor() {
@@ -112,12 +152,36 @@ public class ShellState {
         return this.isArtificial;
     }
 
+    public boolean isVirtual() {
+        return this.isVirtual;
+    }
+
+    public boolean isTemporary() {
+        return this.isTemporary;
+    }
+
+    public boolean isManualOnly() {
+        return this.manualOnly;
+    }
+
+    public void setManualOnly(boolean manualOnly) {
+        this.manualOnly = manualOnly;
+    }
+
     public UUID getOwnerUuid() {
         return this.ownerUuid;
     }
 
     public String getOwnerName() {
         return this.ownerName;
+    }
+
+    public String getTextureValue() {
+        return this.textureValue;
+    }
+
+    public String getTextureSignature() {
+        return this.textureSignature;
     }
 
     public float getHealth() {
@@ -170,6 +234,56 @@ public class ShellState {
 
     public void setPos(BlockPos pos) {
         this.pos = pos;
+        if (this.subLevelUuid != null) {
+            this.localOffset = this.blockCenter();
+        }
+    }
+
+    public void bindTo(BlockEntity container) {
+        Object sublevel = SableCompat.getContainingSublevel(container);
+        this.subLevelUuid = SableCompat.getSublevelUuid(sublevel);
+        this.localOffset = null;
+        this.setPos(container.getBlockPos());
+    }
+
+    @Nullable
+    public UUID getSubLevelUuid() {
+        return this.subLevelUuid;
+    }
+
+    @Nullable
+    public Vec3 getLocalOffset() {
+        return this.localOffset;
+    }
+
+    public float getYawDelta() {
+        return this.yawDelta;
+    }
+
+    @Nullable
+    public Object findSubLevel(Level world) {
+        return this.subLevelUuid == null ? null : SableCompat.findSublevelByUuid(world, this.subLevelUuid);
+    }
+
+    private Vec3 blockCenter() {
+        return new Vec3(this.pos.getX() + 0.5, this.pos.getY(), this.pos.getZ() + 0.5);
+    }
+
+    /**
+     * Resolves the world position this shell currently occupies. Shells stored on a Sable sublevel keep a
+     * sublevel-local offset, so their world position has to be recomputed against the sublevel's current pose.
+     */
+    public Vec3 resolveWorldPos(Level world) {
+        Object sublevel = this.findSubLevel(world);
+        if (sublevel != null && this.localOffset != null) {
+            return SableCompat.localToWorld(sublevel, this.localOffset);
+        }
+        return this.blockCenter();
+    }
+
+    public float resolveYaw(Level world, float fallback) {
+        Object sublevel = this.findSubLevel(world);
+        return sublevel == null ? fallback : this.yawDelta + SableCompat.getSublevelYaw(sublevel);
     }
 
     private ShellState() {
@@ -222,6 +336,21 @@ public class ShellState {
         return create(player, pos, color, 1, ((Shell)player).isArtificial(), true);
     }
 
+    public static ShellState anchor(ServerPlayer player, ResourceLocation worldId, BlockPos pos) {
+        return anchor(player, worldId, pos, false);
+    }
+
+    public static ShellState anchor(ServerPlayer player, ResourceLocation worldId, BlockPos pos, boolean temporary) {
+        ShellState shell = create(player, pos, null, PROGRESS_DONE, true, false);
+        shell.world = worldId;
+        shell.subLevelUuid = null;
+        shell.localOffset = null;
+        shell.yawDelta = 0;
+        shell.isVirtual = true;
+        shell.isTemporary = temporary;
+        return shell;
+    }
+
     /**
      * Creates shell from the nbt data.
      * @param nbt The nbt data.
@@ -243,16 +372,14 @@ public class ShellState {
 
         shell.ownerUuid = player.getUUID();
         shell.ownerName = player.getName().getString();
+        Property textures = player.getGameProfile().getProperties().get("textures").stream().findFirst().orElse(null);
+        if (textures != null) {
+            shell.textureValue = textures.value();
+            shell.textureSignature = textures.signature();
+        }
         shell.gameMode = player.gameMode.getGameModeForPlayer().getId();
         shell.inventory = new SimpleInventory();
         shell.component = ShellStateComponent.empty();
-
-        if (!copyPlayerState && NeoSyncDragonSurvivalCompat.isLoaded()) {
-            shell.component = ShellStateComponent.combine(
-                    shell.component,
-                    DragonSurvivalShellStateComponent.of(player)
-            );
-        }
 
         if (copyPlayerState) {
             shell.health = player.getHealth();
@@ -274,6 +401,13 @@ public class ShellState {
 
         shell.world = WorldUtil.getId(player.level());
         shell.pos = pos;
+
+        Object sublevel = SableCompat.getTrackingSublevel(player);
+        shell.subLevelUuid = SableCompat.getSublevelUuid(sublevel);
+        if (sublevel != null) {
+            shell.localOffset = SableCompat.worldToLocal(sublevel, shell.blockCenter());
+            shell.yawDelta = Mth.wrapDegrees(player.getYRot() - SableCompat.getSublevelYaw(sublevel));
+        }
 
         return shell;
     }
@@ -349,18 +483,56 @@ public class ShellState {
         return Objects.hash(this.uuid);
     }
 
+
+    @OnlyIn(Dist.CLIENT)
+    private ShellEntity entityInstance;
+
+    @OnlyIn(Dist.CLIENT)
+    public ShellEntity asEntity() {
+        if (this.entityInstance == null) {
+            this.entityInstance = new ShellEntity(this);
+        }
+        return this.entityInstance;
+    }
+
+    @Nullable
+    private static CompoundTag writeVec3(@Nullable Vec3 vec) {
+        if (vec == null) {
+            return null;
+        }
+        CompoundTag tag = new CompoundTag();
+        tag.putDouble("x", vec.x);
+        tag.putDouble("y", vec.y);
+        tag.putDouble("z", vec.z);
+        return tag;
+    }
+
+    @Nullable
+    private static Vec3 readVec3(@Nullable CompoundTag tag) {
+        if (tag == null || !tag.contains("x")) {
+            return null;
+        }
+        return new Vec3(tag.getDouble("x"), tag.getDouble("y"), tag.getDouble("z"));
+    }
+
     static {
         NBT_SERIALIZER_FACTORY = new NbtSerializerFactoryBuilder<ShellState>()
                 .add(UUID.class, "uuid", x -> x.uuid, (x, uuid) -> x.uuid = uuid)
+                .add(String.class, "name", x -> x.name, (x, name) -> x.name = name)
                 .add(Integer.class, "color", x -> x.color == null ? -1 : x.color.getId(), (x, color) -> x.color = color == -1 ? null : DyeColor.byId(color))
                 .add(Float.class, "progress", x -> x.progress, (x, progress) -> x.progress = progress)
                 .add(Boolean.class, "isArtificial", x -> x.isArtificial, (x, isArtificial) -> x.isArtificial = isArtificial)
+                .add(Boolean.class, "isVirtual", x -> x.isVirtual, (x, isVirtual) -> x.isVirtual = isVirtual)
+                .add(Boolean.class, "isTemporary", x -> x.isTemporary, (x, isTemporary) -> x.isTemporary = isTemporary != null && isTemporary)
+                .add(Boolean.class, "manualOnly", x -> x.manualOnly, (x, manualOnly) -> x.manualOnly = manualOnly != null && manualOnly)
 
                 .add(UUID.class, "ownerUuid", x -> x.ownerUuid, (x, ownerUuid) -> x.ownerUuid = ownerUuid)
                 .add(String.class, "ownerName", x -> x.ownerName, (x, ownerName) -> x.ownerName = ownerName)
+                .add(String.class, "textureValue", x -> x.textureValue, (x, v) -> x.textureValue = v)
+                .add(String.class, "textureSignature", x -> x.textureSignature, (x, v) -> x.textureSignature = v)
                 .add(Float.class, "health", x -> x.health, (x, health) -> x.health = health)
                 .add(Integer.class, "gameMode", x -> x.gameMode, (x, gameMode) -> x.gameMode = gameMode)
-                .add(ListTag.class, "inventory", x -> x.inventory.writeNbt(new ListTag()), (x, inventory) -> { x.inventory = new SimpleInventory(); x.inventory.readNbt(inventory); })
+                .add(ListTag.class, "inventory", x -> x.inventory.writeNbt(new ListTag()), (x, inventory) -> { x.inventory = new SimpleInventory(); if (inventory != null) { x.inventory.readNbt(inventory); } })
                 .add(CompoundTag.class, "components", x -> x.component.writeNbt(new CompoundTag()), (x, component) -> { x.component = ShellStateComponent.empty(); if (component != null) { x.component.readNbt(component); } })
 
                 .add(Integer.class, "foodLevel", x -> x.foodLevel, (x, foodLevel) -> x.foodLevel = foodLevel)
@@ -373,6 +545,9 @@ public class ShellState {
 
                 .add(ResourceLocation.class, "world", x -> x.world, (x, world) -> x.world = world)
                 .add(BlockPos.class, "pos", x -> x.pos, (x, pos) -> x.pos = pos)
+                .add(UUID.class, "subLevelUuid", x -> x.subLevelUuid, (x, id) -> x.subLevelUuid = id)
+                .add(CompoundTag.class, "localOffset", x -> writeVec3(x.localOffset), (x, tag) -> x.localOffset = readVec3(tag))
+                .add(Float.class, "yawDelta", x -> x.yawDelta, (x, yawDelta) -> x.yawDelta = yawDelta)
                 .build();
     }
 }

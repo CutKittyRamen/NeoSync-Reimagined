@@ -40,6 +40,42 @@ public class SyncBlocks {
                     .isSuffocating(SyncBlocks::never)
                     .isViewBlocking(SyncBlocks::never)));
 
+    public static final DeferredBlock<ManualShellStorageBlock> MANUAL_SHELL_STORAGE = BLOCKS.register("manual_shell_storage",
+            () -> new ManualShellStorageBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .requiresCorrectToolForDrops()
+                    .strength(1.8F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .isValidSpawn(SyncBlocks::never)
+                    .isRedstoneConductor(SyncBlocks::never)
+                    .isSuffocating(SyncBlocks::never)
+                    .isViewBlocking(SyncBlocks::never)));
+
+    public static final DeferredBlock<ZeroPointShellStorageBlock> ZERO_POINT_SHELL_STORAGE = BLOCKS.register("zero_point_shell_storage",
+            () -> new ZeroPointShellStorageBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .requiresCorrectToolForDrops()
+                    .strength(1.8F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .isValidSpawn(SyncBlocks::never)
+                    .isRedstoneConductor(SyncBlocks::never)
+                    .isSuffocating(SyncBlocks::never)
+                    .isViewBlocking(SyncBlocks::never)));
+
+    public static final DeferredBlock<ZeroPointShellConstructorBlock> ZERO_POINT_SHELL_CONSTRUCTOR = BLOCKS.register("zero_point_shell_constructor",
+            () -> new ZeroPointShellConstructorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .requiresCorrectToolForDrops()
+                    .strength(1.8F)
+                    .sound(SoundType.GLASS)
+                    .noOcclusion()
+                    .isValidSpawn(SyncBlocks::never)
+                    .isRedstoneConductor(SyncBlocks::never)
+                    .isSuffocating(SyncBlocks::never)
+                    .isViewBlocking(SyncBlocks::never)));
+
     public static final DeferredBlock<TreadmillBlock> TREADMILL = BLOCKS.register("treadmill",
             () -> new TreadmillBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE)
                     .mapColor(MapColor.COLOR_GRAY)
@@ -58,4 +94,3 @@ public class SyncBlocks {
         return false;
     }
 }
-

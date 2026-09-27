@@ -20,6 +20,9 @@ public class SyncCommands {
 
     static {
         register(GhostShellsCommand.class);
+        register(AnchorCommand.class);
+        register(ShellSelectorCommand.class);
+        register(PurgeShellsCommand.class);
     }
 
     public static void init() {

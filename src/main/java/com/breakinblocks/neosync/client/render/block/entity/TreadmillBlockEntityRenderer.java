@@ -38,7 +38,7 @@ public class TreadmillBlockEntityRenderer extends DoubleBlockEntityRenderer<Trea
     }
 
     @Override
-    protected ResourceLocation getTextureId() {
+    protected ResourceLocation getTextureId(TreadmillBlockEntity blockEntity) {
         return TREADMILL_TEXTURE_ID;
     }
 }

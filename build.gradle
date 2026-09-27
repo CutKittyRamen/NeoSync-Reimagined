@@ -2,9 +2,11 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'net.neoforged.moddev' version '2.0.78'
+    id 'me.modmuss50.mod-publish-plugin' version '1.1.0'
 }
 
-version = project.mod_version
+def isSnapshot = System.getenv('SNAPSHOT') == 'true'
+version = "${project.minecraft_version}-${project.mod_version}${isSnapshot ? '-SNAPSHOT' : ''}"
 group = project.maven_group
 
 base {
@@ -39,6 +41,18 @@ repositories {
         name = 'Modrinth'
         url = 'https://api.modrinth.com/maven'
         content { includeGroup 'maven.modrinth' }
+    }
+    maven {
+        name = 'Curios'
+        url = 'https://maven.theillusivec4.top/'
+        content { includeGroup 'top.theillusivec4.curios' }
+    }
+    maven {
+        url = 'https://maven.ryanhcode.dev/releases'
+        content {
+            includeGroup 'dev.ryanhcode.sable'
+            includeGroup 'dev.ryanhcode.sable-companion'
+        }
     }
     mavenCentral()
 }
@@ -93,6 +107,18 @@ dependencies {
     // Jade — single jar contains both API and impl
     compileOnly "maven.modrinth:jade:${project.jade_version}"
     localRuntime "maven.modrinth:jade:${project.jade_version}"
+
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${project.curios_version}:api"
+    localRuntime "top.theillusivec4.curios:curios-neoforge:${project.curios_version}"
+
+    localRuntime "maven.modrinth:mekanism:${project.mekanism_version}"
+
+    compileOnly "org.appliedenergistics:guideme:${project.guideme_version}"
+    localRuntime "org.appliedenergistics:guideme:${project.guideme_version}"
+
+    compileOnly("dev.ryanhcode.sable:sable-neoforge-1.21.1:${project.sable_version}") { transitive = false }
+    localRuntime("dev.ryanhcode.sable:sable-neoforge-1.21.1:${project.sable_version}") { transitive = false }
+    compileOnly("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:${project.sable_companion_version}") { transitive = false }
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -132,6 +158,60 @@ publishing {
         }
     }
     repositories {
-        // publish targets go here
+        maven {
+            name = 'BreakInBlocks'
+            url = isSnapshot
+                    ? 'https://maven.breakinblocks.com/snapshots'
+                    : 'https://maven.breakinblocks.com/releases'
+            credentials {
+                username = System.getenv('MAVEN_USER') ?: ''
+                password = System.getenv('MAVEN_TOKEN') ?: ''
+            }
+        }
+    }
+}
+
+// Mod publishing to CurseForge and Modrinth (GitHub releases handled by CI)
+publishMods {
+    file = jar.archiveFile
+    def changelogFile = project.file('CHANGELOG.md')
+    def notes = []
+    def collecting = false
+    if (changelogFile.exists()) {
+        changelogFile.eachLine { line ->
+            if (line.startsWith('## ')) {
+                collecting = line.substring(3).trim() == project.mod_version
+            } else if (collecting) {
+                notes << line
+            }
+        }
+    }
+    changelog = notes ? notes.join(System.lineSeparator()).trim() : "Release ${project.version}"
+    type = isSnapshot ? BETA : STABLE
+    modLoaders.add('neoforge')
+
+    curseforge {
+        projectId = project.curseforge_project_id
+        projectSlug = project.mod_id
+        accessToken = providers.environmentVariable('CURSEFORGE_TOKEN')
+        minecraftVersions.add(project.minecraft_version)
+        clientRequired = true
+        serverRequired = true
+        optional('jei', 'jade', 'curios', 'mekanism', 'guideme')
+    }
+
+    modrinth {
+        projectId = project.modrinth_project_id
+        accessToken = providers.environmentVariable('MODRINTH_TOKEN')
+        minecraftVersions.add(project.minecraft_version)
+        optional('jei', 'jade', 'curios', 'mekanism', 'guideme')
+    }
+}
+
+// Include Maven publish when running publishMods
+tasks.named('publishMods') {
+    def mavenUser = providers.environmentVariable('MAVEN_USER')
+    if (mavenUser.isPresent()) {
+        dependsOn 'publishMavenJavaPublicationToBreakInBlocksRepository'
     }
 }

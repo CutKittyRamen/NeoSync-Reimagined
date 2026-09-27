@@ -24,6 +24,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 import com.breakinblocks.neosync.api.event.EntityFitnessEvents;
 import com.breakinblocks.neosync.common.block.TreadmillBlock;
 import com.breakinblocks.neosync.common.config.SyncConfig;
+import com.breakinblocks.neosync.compat.sable.SableCompat;
 
 import java.util.Map;
 import java.util.UUID;
@@ -102,10 +103,6 @@ public class TreadmillBlockEntity extends BlockEntity implements DoubleBlockEnti
             return;
         }
 
-        if (this.runner instanceof LivingEntity livingEntity) {
-            float speed = 0.6F + 0.4F * this.runningTime / MAX_RUNNING_TIME;
-            livingEntity.walkAnimation.update(speed, 0.4F);
-        }
         this.runningTime = Math.min(++this.runningTime, MAX_RUNNING_TIME);
     }
 
@@ -121,15 +118,20 @@ public class TreadmillBlockEntity extends BlockEntity implements DoubleBlockEnti
         }
 
         Direction face = state.getValue(TreadmillBlock.FACING);
-        Vec3 anchor = computeTreadmillPivot(pos, face);
-        if (!isValidEntity(this.runner) || !isEntityNear(this.runner, anchor)) {
+        Vec3 localAnchor = computeTreadmillPivot(pos, face);
+        Object sublevel = SableCompat.getContainingSublevel(this);
+        Vec3 runnerLocalPos = sublevel != null ? SableCompat.worldToLocal(sublevel, this.runner.position()) : this.runner.position();
+        if (!isValidEntity(this.runner) || !isEntityNear(runnerLocalPos, localAnchor)) {
             this.setRunner(null);
             return;
         }
 
+        Vec3 worldAnchor = sublevel != null ? SableCompat.localToWorld(sublevel, localAnchor) : localAnchor;
+        float yawOffset = sublevel != null ? SableCompat.getSublevelYaw(sublevel) : 0F;
+
         if (!(this.runner instanceof Player)) {
-            float yaw = face.toYRot();
-            this.runner.moveTo(anchor.x, anchor.y, anchor.z, yaw, 0);
+            float yaw = face.toYRot() + yawOffset;
+            this.runner.moveTo(worldAnchor.x, worldAnchor.y, worldAnchor.z, yaw, 0);
             this.runner.setYHeadRot(yaw);
             this.runner.setYBodyRot(yaw);
             this.runner.setYRot(yaw);
@@ -138,10 +140,9 @@ public class TreadmillBlockEntity extends BlockEntity implements DoubleBlockEnti
 
         if (this.runner instanceof LivingEntity livingEntity) {
             livingEntity.setSpeed(0.15F);
-            livingEntity.setDeltaMovement(HORIZONTAL_MOTION[face.ordinal()]);
-
-            float speed = 0.6F + 0.4F * this.runningTime / MAX_RUNNING_TIME;
-            livingEntity.walkAnimation.update(speed, 0.4F);
+            Vec3 localMotion = HORIZONTAL_MOTION[face.ordinal()];
+            Vec3 worldMotion = sublevel != null ? SableCompat.transformDirectionToWorld(sublevel, localMotion) : localMotion;
+            livingEntity.setDeltaMovement(worldMotion);
 
             if (livingEntity instanceof Mob mob) {
                 mob.getNavigation().stop();
@@ -163,7 +164,10 @@ public class TreadmillBlockEntity extends BlockEntity implements DoubleBlockEnti
     }
 
     public void onSteppedOn(BlockPos pos, BlockState state, Entity entity) {
-        if (this.runner != null || !isEntityNear(entity, computeTreadmillPivot(pos, state.getValue(TreadmillBlock.FACING)))) {
+        Vec3 localAnchor = computeTreadmillPivot(pos, state.getValue(TreadmillBlock.FACING));
+        Object sublevel = SableCompat.getContainingSublevel(this);
+        Vec3 entityLocalPos = sublevel != null ? SableCompat.worldToLocal(sublevel, entity.position()) : entity.position();
+        if (this.runner != null || !isEntityNear(entityLocalPos, localAnchor)) {
             return;
         }
 
@@ -332,8 +336,8 @@ public class TreadmillBlockEntity extends BlockEntity implements DoubleBlockEnti
         );
     }
 
-    private static boolean isEntityNear(Entity entity, Vec3 pos) {
-        return entity.distanceToSqr(pos) < MAX_SQUARED_DISTANCE;
+    private static boolean isEntityNear(Vec3 entityEffectivePos, Vec3 pos) {
+        return entityEffectivePos.distanceToSqr(pos) < MAX_SQUARED_DISTANCE;
     }
 
     private static Vec3 computeTreadmillPivot(BlockPos pos, Direction face) {

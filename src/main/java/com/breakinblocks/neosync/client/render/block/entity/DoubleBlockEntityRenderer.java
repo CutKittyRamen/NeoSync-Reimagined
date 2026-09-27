@@ -38,7 +38,7 @@ public abstract class DoubleBlockEntityRenderer<T extends BlockEntity & DoubleBl
             matrices.mulPose(Axis.YP.rotationDegrees(rotation));
 
             DoubleBlockModel model = this.getModel(blockEntity, blockState, tickDelta);
-            ResourceLocation textureId = this.getTextureId();
+            ResourceLocation textureId = this.getTextureId(blockEntity);
             VertexConsumer consumer = vertexConsumers.getBuffer(model.renderType(textureId));
 
             if (blockEntity.hasLevel()) {
@@ -63,5 +63,5 @@ public abstract class DoubleBlockEntityRenderer<T extends BlockEntity & DoubleBl
 
     protected abstract BlockState getDefaultState();
 
-    protected abstract ResourceLocation getTextureId();
+    protected abstract ResourceLocation getTextureId(T blockEntity);
 }

@@ -1,9 +1,5 @@
 package com.breakinblocks.neosync.api.networking;
 
-import com.breakinblocks.neosync.NeoSync;
-import com.breakinblocks.neosync.api.shell.ShellState;
-import com.breakinblocks.neosync.api.shell.ShellStateUpdateType;
-import com.breakinblocks.neosync.common.utils.NeoSyncDebug;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -13,45 +9,49 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import com.breakinblocks.neosync.NeoSync;
+import com.breakinblocks.neosync.api.shell.ShellState;
+import com.breakinblocks.neosync.api.shell.ShellStateUpdateType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
 public record ShellStateUpdatePacket(
-    ShellStateUpdateType kind,
-    @Nullable ShellState addedState,
-    @Nullable UUID targetUuid,
-    float progress,
-    @Nullable DyeColor color,
-    @Nullable BlockPos pos
+        ShellStateUpdateType kind,
+        @Nullable ShellState addedState,
+        @Nullable UUID targetUuid,
+        float progress,
+        @Nullable DyeColor color,
+        @Nullable BlockPos pos,
+        @Nullable String name,
+        boolean manualOnly
 ) implements CustomPacketPayload {
-    public static final Type<ShellStateUpdatePacket> TYPE =
-        new Type<>(NeoSync.locate("shell/state/update"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ShellStateUpdatePacket> STREAM_CODEC =
-        StreamCodec.of(ShellStateUpdatePacket::encode, ShellStateUpdatePacket::decode);
+    public static final Type<ShellStateUpdatePacket> TYPE = new Type<>(NeoSync.locate("shell/state/update"));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, ShellStateUpdatePacket> STREAM_CODEC = StreamCodec.of(
+            ShellStateUpdatePacket::encode,
+            ShellStateUpdatePacket::decode
+    );
 
     public ShellStateUpdatePacket(ShellStateUpdateType kind, ShellState state) {
-        this(
-            kind,
-            adoptAddedState(kind, state),
-            state == null ? null : state.getUuid(),
-            state == null ? 0F : state.getProgress(),
-            state == null ? null : state.getColor(),
-            state == null ? null : state.getPos()
-        );
-
+        this(kind, adoptedState(kind, state), state == null ? null : state.getUuid(),
+             state == null ? 0F : state.getProgress(),
+             state == null ? null : state.getColor(),
+             state == null ? null : state.getPos(),
+             state == null ? null : state.getName(),
+             state != null && state.isManualOnly());
         if (state == null && kind != ShellStateUpdateType.NONE) {
             throw new IllegalStateException("ShellStateUpdatePacket requires a non-null state for kind " + kind);
         }
     }
 
-    private static @Nullable ShellState adoptAddedState(ShellStateUpdateType kind, @Nullable ShellState state) {
+    private static @Nullable ShellState adoptedState(ShellStateUpdateType kind, ShellState state) {
         return kind == ShellStateUpdateType.ADD ? state : null;
     }
 
     @Override
-    public Type<ShellStateUpdatePacket> type() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 
@@ -60,19 +60,7 @@ public record ShellStateUpdatePacket(
     }
 
     private static void encode(RegistryFriendlyByteBuf buf, ShellStateUpdatePacket payload) {
-        NeoSyncDebug.info(
-            "shell-delta-packet",
-            "encode kind={} targetUuid={} progress={} color={} pos={} added={}",
-            payload.kind,
-            payload.targetUuid,
-            payload.progress,
-            payload.color,
-            payload.pos,
-            payload.addedState == null ? "null" : NeoSyncDebug.describeShell(payload.addedState)
-        );
-
         buf.writeEnum(payload.kind);
-
         switch (payload.kind) {
             case ADD -> {
                 if (payload.addedState == null) {
@@ -94,57 +82,33 @@ public record ShellStateUpdatePacket(
                 buf.writeVarInt((int) (payload.progress * 100));
                 buf.writeVarInt(payload.color == null ? Byte.MAX_VALUE : payload.color.getId());
                 buf.writeBlockPos(payload.pos);
+                buf.writeUtf(payload.name == null ? "" : payload.name, ShellState.MAX_NAME_LENGTH);
+                buf.writeBoolean(payload.manualOnly);
             }
-            case NONE -> {
-            }
+            case NONE -> { }
         }
     }
 
     private static ShellStateUpdatePacket decode(RegistryFriendlyByteBuf buf) {
         ShellStateUpdateType kind = buf.readEnum(ShellStateUpdateType.class);
-
-        ShellStateUpdatePacket payload = switch (kind) {
-            case ADD -> {
-                ShellState added = ShellState.STREAM_CODEC.decode(buf);
-                yield new ShellStateUpdatePacket(kind, added, added.getUuid(), added.getProgress(), added.getColor(), added.getPos());
-            }
-            case REMOVE -> new ShellStateUpdatePacket(kind, null, buf.readUUID(), 0F, null, null);
+        return switch (kind) {
+            case ADD -> new ShellStateUpdatePacket(kind, ShellState.STREAM_CODEC.decode(buf), null, 0F, null, null, null, false);
+            case REMOVE -> new ShellStateUpdatePacket(kind, null, buf.readUUID(), 0F, null, null, null, false);
             case UPDATE -> {
                 UUID uuid = buf.readUUID();
                 float progress = Mth.clamp(buf.readVarInt() / 100F, 0F, 1F);
                 int colorId = buf.readVarInt();
                 DyeColor color = colorId < 0 || colorId > 15 ? null : DyeColor.byId(colorId);
                 BlockPos pos = buf.readBlockPos();
-                yield new ShellStateUpdatePacket(kind, null, uuid, progress, color, pos);
+                String name = buf.readUtf(ShellState.MAX_NAME_LENGTH);
+                boolean manualOnly = buf.readBoolean();
+                yield new ShellStateUpdatePacket(kind, null, uuid, progress, color, pos, name.isEmpty() ? null : name, manualOnly);
             }
-            case NONE -> new ShellStateUpdatePacket(kind, null, null, 0F, null, null);
+            case NONE -> new ShellStateUpdatePacket(kind, null, null, 0F, null, null, null, false);
         };
-
-        NeoSyncDebug.info(
-            "shell-delta-packet",
-            "decode kind={} targetUuid={} progress={} color={} pos={} added={}",
-            payload.kind,
-            payload.targetUuid,
-            payload.progress,
-            payload.color,
-            payload.pos,
-            payload.addedState == null ? "null" : NeoSyncDebug.describeShell(payload.addedState)
-        );
-
-        return payload;
     }
 
     public static void handle(ShellStateUpdatePacket payload, IPayloadContext context) {
-        NeoSyncDebug.info(
-            "shell-delta-packet",
-            "handle kind={} targetUuid={} progress={} color={} pos={} contextPlayer={}",
-            payload.kind,
-            payload.targetUuid,
-            payload.progress,
-            payload.color,
-            payload.pos,
-            context.player()
-        );
-        context.enqueueWork(() -> ClientPacketDispatch.onShellStateUpdate(payload));
+        context.enqueueWork(() -> ClientNetworkHandler.onShellStateUpdate(payload));
     }
 }
