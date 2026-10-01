@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import com.breakinblocks.neosync.common.utils.BlockPosUtil;
 import com.breakinblocks.neosync.common.utils.NeoSyncDebug;
 import com.breakinblocks.neosync.common.utils.WorldUtil;
-import com.breakinblocks.neosync.integration.sable.NeoSyncSableCompat;
+import com.breakinblocks.neosync.compat.sable.NeoSyncSableCompat;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.core.BlockPos;

@@ -18,6 +18,8 @@ public final class SyncLanguageProvider extends LanguageProvider {
         add(SyncBlocks.SHELL_STORAGE.get(), "Shell Storage");
         add(SyncBlocks.SHELL_CONSTRUCTOR.get(), "Shell Constructor");
         add(SyncBlocks.TREADMILL.get(), "Treadmill");
+        add(SyncBlocks.SAMPLER.get(), "Sampler");
+        add(SyncBlocks.INTERACTOR.get(), "Interactor");
 
         add(SyncItems.SYNC_CORE.get(), "Sync Core");
         add("item.neosync.guide", "NeoSync Guide");

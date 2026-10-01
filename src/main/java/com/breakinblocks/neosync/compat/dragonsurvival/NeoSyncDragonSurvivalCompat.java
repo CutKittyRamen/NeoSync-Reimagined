@@ -1,4 +1,4 @@
-package com.breakinblocks.neosync.integration.dragonsurvival;
+package com.breakinblocks.neosync.compat.dragonsurvival;
 
 import com.breakinblocks.neosync.api.shell.ShellStateComponentFactoryRegistry;
 import net.minecraft.core.HolderLookup;

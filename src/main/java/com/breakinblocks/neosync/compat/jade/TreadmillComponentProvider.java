@@ -1,4 +1,4 @@
-package com.breakinblocks.neosync.integration.jade;
+package com.breakinblocks.neosync.compat.jade;
 
 import com.breakinblocks.neosync.NeoSync;
 import com.breakinblocks.neosync.common.block.entity.TreadmillBlockEntity;

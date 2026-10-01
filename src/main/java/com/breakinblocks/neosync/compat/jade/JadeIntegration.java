@@ -1,4 +1,4 @@
-package com.breakinblocks.neosync.integration.jade;
+package com.breakinblocks.neosync.compat.jade;
 
 import com.breakinblocks.neosync.common.block.ShellConstructorBlock;
 import com.breakinblocks.neosync.common.block.ShellStorageBlock;

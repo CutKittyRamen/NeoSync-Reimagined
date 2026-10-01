@@ -23,8 +23,32 @@ public final class SyncCapabilities {
                 (be, side) -> be);
 
         event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                SyncBlockEntities.SHELL_CONSTRUCTOR.get(),
+                (be, side) -> com.breakinblocks.neosync.common.config.SyncConfig.getInstance().enableFluidConsumption() ? be : null);
+
+        event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK,
                 SyncBlockEntities.TREADMILL.get(),
                 (be, side) -> be);
+
+        try {
+            @SuppressWarnings("unchecked")
+            net.neoforged.neoforge.capabilities.BlockCapability peripheralCap =
+                    (net.neoforged.neoforge.capabilities.BlockCapability) 
+                    Class.forName("dan200.computercraft.api.peripheral.PeripheralCapabilities").getField("CAPABILITY").get(null);
+            
+            event.registerBlockEntity(
+                    peripheralCap,
+                    SyncBlockEntities.SAMPLER.get(),
+                    (be, side) -> be.getPeripheral());
+
+            event.registerBlockEntity(
+                    peripheralCap,
+                    SyncBlockEntities.INTERACTOR.get(),
+                    (be, side) -> be.getPeripheral());
+        } catch (Exception e) {
+            // Ignore if CC is not present or capability changed
+        }
     }
 }

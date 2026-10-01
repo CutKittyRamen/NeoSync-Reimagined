@@ -1,4 +1,4 @@
-package com.breakinblocks.neosync.integration.jade;
+package com.breakinblocks.neosync.compat.jade;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;

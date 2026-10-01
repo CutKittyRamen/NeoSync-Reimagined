@@ -1,4 +1,4 @@
-package com.breakinblocks.neosync.integration.dragonsurvival;
+package com.breakinblocks.neosync.compat.dragonsurvival;
 
 import com.breakinblocks.neosync.api.shell.ShellStateComponent;
 import net.minecraft.nbt.CompoundTag;

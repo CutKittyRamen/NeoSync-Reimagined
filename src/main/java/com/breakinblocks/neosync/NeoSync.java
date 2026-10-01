@@ -19,7 +19,7 @@ import com.breakinblocks.neosync.compat.sable.SableCompat;
 import com.breakinblocks.neosync.compat.sable.SableCompatBridge;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import com.breakinblocks.neosync.integration.dragonsurvival.NeoSyncDragonSurvivalCompat;
+import com.breakinblocks.neosync.compat.dragonsurvival.NeoSyncDragonSurvivalCompat;
 
 @Mod(NeoSync.MOD_ID)
 public class NeoSync {

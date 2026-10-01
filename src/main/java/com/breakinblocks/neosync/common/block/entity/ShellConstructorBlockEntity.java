@@ -17,8 +17,25 @@ import com.breakinblocks.neosync.common.config.SyncConfig;
 import com.breakinblocks.neosync.common.entity.damage.FingerstickDamageSource;
 import com.breakinblocks.neosync.common.utils.BlockPosUtil;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.HolderLookup;
 
-public class ShellConstructorBlockEntity extends AbstractShellContainerBlockEntity implements IEnergyStorage {
+public class ShellConstructorBlockEntity extends AbstractShellContainerBlockEntity implements IEnergyStorage, IFluidHandler {
+    public final FluidTank fluidTank = new FluidTank(SyncConfig.getInstance().shellConstructorFluidCapacity(), fluidStack -> {
+        if (fluidStack == null || fluidStack.isEmpty()) return false;
+        String fluidName = BuiltInRegistries.FLUID.getKey(fluidStack.getFluid()).toString();
+        return SyncConfig.getInstance().shellConstructorFluidTypes().contains(fluidName);
+    }) {
+        @Override
+        public int getCapacity() {
+            return SyncConfig.getInstance().shellConstructorFluidCapacity();
+        }
+    };
     public ShellConstructorBlockEntity(BlockPos pos, BlockState state) {
         this(SyncBlockEntities.SHELL_CONSTRUCTOR.get(), pos, state);
     }
@@ -90,6 +107,29 @@ public class ShellConstructorBlockEntity extends AbstractShellContainerBlockEnti
         int missingFE = (int) Math.ceil((ShellState.PROGRESS_DONE - bottom.shell.getProgress()) * capacity);
         int accepted = Math.min(maxReceive, missingFE);
 
+        if (accepted > 0 && SyncConfig.getInstance().enableFluidConsumption()) {
+            int requiredFluidTotal = Math.max(1, SyncConfig.getInstance().shellConstructorFluidAmount());
+            int energyPerMb = Math.max(1, (int) Math.ceil((double) capacity / requiredFluidTotal));
+
+            int availableMb = bottom.fluidTank.getFluidAmount();
+            int maxFeByFluid = availableMb * energyPerMb;
+
+            accepted = Math.min(accepted, maxFeByFluid);
+
+            if (accepted > 0 && accepted == missingFE && missingFE < energyPerMb) {
+                if (availableMb > 0) {
+                    if (!simulate) bottom.fluidTank.drain(1, IFluidHandler.FluidAction.EXECUTE);
+                } else {
+                    accepted = 0;
+                }
+            } else {
+                accepted = (accepted / energyPerMb) * energyPerMb;
+                if (accepted > 0 && !simulate) {
+                    bottom.fluidTank.drain(accepted / energyPerMb, IFluidHandler.FluidAction.EXECUTE);
+                }
+            }
+        }
+
         if (accepted > 0 && !simulate) {
             bottom.shell.setProgress(bottom.shell.getProgress() + (float) accepted / capacity);
             bottom.setChanged();
@@ -130,5 +170,80 @@ public class ShellConstructorBlockEntity extends AbstractShellContainerBlockEnti
     @Override
     public boolean canReceive() {
         return true;
+    }
+
+    @Override
+    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+        super.saveAdditional(nbt, registries);
+        nbt.put("Fluid", this.fluidTank.writeToNBT(registries, new CompoundTag()));
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+        super.loadAdditional(nbt, registries);
+        if (nbt.contains("Fluid")) {
+            this.fluidTank.readFromNBT(registries, nbt.getCompound("Fluid"));
+        }
+    }
+
+    @Override
+    public int getTanks() {
+        if (!SyncConfig.getInstance().enableFluidConsumption()) return 0;
+        return this.getBottomPart().map(b -> ((ShellConstructorBlockEntity) b).fluidTank.getTanks()).orElse(0);
+    }
+
+    @Override
+    public @NotNull FluidStack getFluidInTank(int tank) {
+        return this.getBottomPart().map(b -> ((ShellConstructorBlockEntity) b).fluidTank.getFluidInTank(tank)).orElse(FluidStack.EMPTY);
+    }
+
+    @Override
+    public int getTankCapacity(int tank) {
+        if (!SyncConfig.getInstance().enableFluidConsumption()) return 0;
+        return this.getBottomPart().map(b -> ((ShellConstructorBlockEntity) b).fluidTank.getTankCapacity(tank)).orElse(0);
+    }
+
+    @Override
+    public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
+        return this.getBottomPart().map(b -> ((ShellConstructorBlockEntity) b).fluidTank.isFluidValid(tank, stack)).orElse(false);
+    }
+
+    @Override
+    public int fill(FluidStack resource, FluidAction action) {
+        return this.getBottomPart().map(b -> {
+            ShellConstructorBlockEntity bottom = (ShellConstructorBlockEntity) b;
+            int filled = bottom.fluidTank.fill(resource, action);
+            if (filled > 0 && action.execute()) {
+                bottom.setChanged();
+                bottom.sync();
+            }
+            return filled;
+        }).orElse(0);
+    }
+
+    @Override
+    public @NotNull FluidStack drain(FluidStack resource, FluidAction action) {
+        return this.getBottomPart().map(b -> {
+            ShellConstructorBlockEntity bottom = (ShellConstructorBlockEntity) b;
+            FluidStack drained = bottom.fluidTank.drain(resource, action);
+            if (!drained.isEmpty() && action.execute()) {
+                bottom.setChanged();
+                bottom.sync();
+            }
+            return drained;
+        }).orElse(FluidStack.EMPTY);
+    }
+
+    @Override
+    public @NotNull FluidStack drain(int maxDrain, FluidAction action) {
+        return this.getBottomPart().map(b -> {
+            ShellConstructorBlockEntity bottom = (ShellConstructorBlockEntity) b;
+            FluidStack drained = bottom.fluidTank.drain(maxDrain, action);
+            if (!drained.isEmpty() && action.execute()) {
+                bottom.setChanged();
+                bottom.sync();
+            }
+            return drained;
+        }).orElse(FluidStack.EMPTY);
     }
 }

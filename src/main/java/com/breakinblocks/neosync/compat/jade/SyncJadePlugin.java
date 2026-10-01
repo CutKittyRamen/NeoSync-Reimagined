@@ -1,4 +1,4 @@
-package com.breakinblocks.neosync.integration.jade;
+package com.breakinblocks.neosync.compat.jade;
 
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaPlugin;

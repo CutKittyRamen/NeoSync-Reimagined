@@ -40,8 +40,11 @@ public class SyncBlocks {
                     .isSuffocating(SyncBlocks::never)
                     .isViewBlocking(SyncBlocks::never)));
 
+    public static final DeferredBlock<SamplerBlock> SAMPLER = BLOCKS.register("sampler",
+            () -> new SamplerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.PUMPKIN)));
 
-
+    public static final DeferredBlock<InteractorBlock> INTERACTOR = BLOCKS.register("interactor",
+            () -> new InteractorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.JACK_O_LANTERN)));
 
     public static final DeferredBlock<TreadmillBlock> TREADMILL = BLOCKS.register("treadmill",
             () -> new TreadmillBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE)

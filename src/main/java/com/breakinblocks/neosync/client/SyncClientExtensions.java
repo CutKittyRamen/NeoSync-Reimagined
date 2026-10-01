@@ -10,7 +10,7 @@ import com.breakinblocks.neosync.NeoSync;
 import com.breakinblocks.neosync.client.render.SyncRenderers;
 import com.breakinblocks.neosync.common.block.entity.SyncBlockEntities;
 import com.breakinblocks.neosync.common.item.SyncItems;
-import com.breakinblocks.neosync.integration.jade.JadeIntegration;
+import com.breakinblocks.neosync.compat.jade.JadeIntegration;
 
 @EventBusSubscriber(modid = NeoSync.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public final class SyncClientExtensions {

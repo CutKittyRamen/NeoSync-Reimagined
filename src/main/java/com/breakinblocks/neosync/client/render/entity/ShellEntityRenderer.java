@@ -3,7 +3,7 @@ package com.breakinblocks.neosync.client.render.entity;
 import com.breakinblocks.neosync.api.shell.ShellState;
 import com.breakinblocks.neosync.client.entity.ShellEntity;
 import com.breakinblocks.neosync.client.model.ShellModel;
-import com.breakinblocks.neosync.integration.dragonsurvival.NeoSyncDragonSurvivalClientCompat;
+import com.breakinblocks.neosync.compat.dragonsurvival.NeoSyncDragonSurvivalClientCompat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -161,6 +161,12 @@ public class ShellEntityRenderer extends PlayerRenderer {
         animalModel.leftArm.setRotation(0, 0, 0);
         animalModel.rightLeg.setRotation(0, 0, 0);
         animalModel.leftLeg.setRotation(0, 0, 0);
+        animalModel.hat.setRotation(0, 0, 0);
+        animalModel.jacket.setRotation(0, 0, 0);
+        animalModel.rightSleeve.setRotation(0, 0, 0);
+        animalModel.leftSleeve.setRotation(0, 0, 0);
+        animalModel.rightPants.setRotation(0, 0, 0);
+        animalModel.leftPants.setRotation(0, 0, 0);
         model.parentModel.young = false;
         model.setBuildProgress(state.getProgress());
     }

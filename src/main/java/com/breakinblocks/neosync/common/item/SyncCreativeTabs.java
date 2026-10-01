@@ -21,6 +21,8 @@ public class SyncCreativeTabs {
                         output.accept(SyncItems.SHELL_STORAGE.get());
                         output.accept(SyncItems.SHELL_CONSTRUCTOR.get());
                         output.accept(SyncItems.TREADMILL.get());
+                        output.accept(SyncItems.SAMPLER.get());
+                        output.accept(SyncItems.INTERACTOR.get());
                     }).build()
     );
 }

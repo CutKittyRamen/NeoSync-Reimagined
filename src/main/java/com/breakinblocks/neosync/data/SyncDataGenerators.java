@@ -30,6 +30,7 @@ public final class SyncDataGenerators {
         generator.addProvider(event.includeServer(), new SyncLootTableProvider(output, datapackLookup));
         generator.addProvider(event.includeServer(), new SyncBlockTagsProvider(output, datapackLookup, existing));
         generator.addProvider(event.includeClient(), new SyncLanguageProvider(output));
+        generator.addProvider(event.includeClient(), new SyncBlockStateProvider(output, existing));
     }
 }
 

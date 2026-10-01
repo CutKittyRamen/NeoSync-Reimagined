@@ -1,4 +1,4 @@
-package com.breakinblocks.neosync.integration.sable;
+package com.breakinblocks.neosync.compat.sable;
 
 import com.breakinblocks.neosync.common.utils.NeoSyncDebug;
 import net.minecraft.core.BlockPos;

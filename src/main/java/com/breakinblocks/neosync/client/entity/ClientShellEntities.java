@@ -1,7 +1,7 @@
 package com.breakinblocks.neosync.client.entity;
 
 import com.breakinblocks.neosync.api.shell.ShellState;
-import com.breakinblocks.neosync.integration.dragonsurvival.NeoSyncDragonSurvivalClientCompat;
+import com.breakinblocks.neosync.compat.dragonsurvival.NeoSyncDragonSurvivalClientCompat;
 
 import java.util.IdentityHashMap;
 import java.util.Map;

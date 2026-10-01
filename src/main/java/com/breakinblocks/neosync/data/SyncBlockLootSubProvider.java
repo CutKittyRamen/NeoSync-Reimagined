@@ -38,11 +38,13 @@ public final class SyncBlockLootSubProvider extends BlockLootSubProvider {
                                                 .hasProperty(TreadmillBlock.PART, TreadmillBlock.Part.BACK))))
                         .when(ExplosionCondition.survivesExplosion())
         ));
+        this.dropSelf(SyncBlocks.SAMPLER.get());
+        this.dropSelf(SyncBlocks.INTERACTOR.get());
     }
 
     @Override
     protected Iterable<Block> getKnownBlocks() {
-        return Stream.of(SyncBlocks.SHELL_STORAGE, SyncBlocks.SHELL_CONSTRUCTOR, SyncBlocks.TREADMILL)
+        return Stream.of(SyncBlocks.SHELL_STORAGE, SyncBlocks.SHELL_CONSTRUCTOR, SyncBlocks.TREADMILL, SyncBlocks.SAMPLER, SyncBlocks.INTERACTOR)
                 .map(DeferredBlock::get)
                 .map(b -> (Block) b)
                 .toList();

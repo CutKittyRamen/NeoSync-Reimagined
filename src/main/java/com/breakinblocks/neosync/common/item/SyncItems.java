@@ -1,5 +1,6 @@
 package com.breakinblocks.neosync.common.item;
 
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -20,5 +21,9 @@ public class SyncItems {
 
     public static final DeferredItem<TreadmillItem> TREADMILL = ITEMS.register("treadmill",
             () -> new TreadmillItem(SyncBlocks.TREADMILL.get(), new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<BlockItem> SAMPLER = ITEMS.registerSimpleBlockItem("sampler", SyncBlocks.SAMPLER);
+
+    public static final DeferredItem<BlockItem> INTERACTOR = ITEMS.registerSimpleBlockItem("interactor", SyncBlocks.INTERACTOR);
 }
 

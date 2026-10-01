@@ -44,6 +44,12 @@ public class SyncConfig {
     private static final ModConfigSpec.LongValue SHELL_STORAGE_CAPACITY;
     private static final ModConfigSpec.LongValue SHELL_STORAGE_CONSUMPTION;
 
+    // Fluid settings
+    private static final ModConfigSpec.BooleanValue ENABLE_FLUID_CONSUMPTION;
+    private static final ModConfigSpec.IntValue SHELL_CONSTRUCTOR_FLUID_AMOUNT;
+    private static final ModConfigSpec.IntValue SHELL_CONSTRUCTOR_FLUID_CAPACITY;
+    private static final ModConfigSpec.ConfigValue<List<? extends String>> SHELL_CONSTRUCTOR_FLUID_TYPES;
+
     // Shell storage settings
     private static final ModConfigSpec.BooleanValue SHELL_STORAGE_ACCEPTS_REDSTONE;
     private static final ModConfigSpec.IntValue SHELL_STORAGE_MAX_UNPOWERED_LIFESPAN;
@@ -117,6 +123,28 @@ public class SyncConfig {
         SHELL_STORAGE_CONSUMPTION = BUILDER
                 .comment("Energy consumption per tick for shell storage")
                 .defineInRange("shellStorageConsumption", 16L, 0L, 1000L);
+
+        BUILDER.pop();
+
+        BUILDER.comment("Fluid settings").push("fluid");
+
+        ENABLE_FLUID_CONSUMPTION = BUILDER
+                .comment("Enable fluid consumption for shell constructor")
+                .define("enableFluidConsumption", false);
+
+        SHELL_CONSTRUCTOR_FLUID_AMOUNT = BUILDER
+                .comment("Fluid consumption required to complete one shell (in mB)")
+                .defineInRange("shellConstructorFluidAmount", 1000, 1, Integer.MAX_VALUE);
+
+        SHELL_CONSTRUCTOR_FLUID_CAPACITY = BUILDER
+                .comment("Maximum fluid capacity for the shell constructor (in mB)")
+                .defineInRange("shellConstructorFluidCapacity", 10000, 1, Integer.MAX_VALUE);
+
+        SHELL_CONSTRUCTOR_FLUID_TYPES = BUILDER
+                .comment("List of accepted fluids (registry names) for shell constructor")
+                .defineListAllowEmpty("shellConstructorFluidTypes",
+                        () -> Collections.singletonList("minecraft:water"),
+                        o -> o instanceof String);
 
         BUILDER.pop();
 
@@ -302,6 +330,23 @@ public class SyncConfig {
 
     public long shellConstructorEnergyRequirement() {
         return Math.max(1L, Math.round(shellConstructorCapacity() / Math.max(shellConstructionSpeed(), 0.01D)));
+    }
+
+    public boolean enableFluidConsumption() {
+        return ENABLE_FLUID_CONSUMPTION.get();
+    }
+
+    public int shellConstructorFluidAmount() {
+        return SHELL_CONSTRUCTOR_FLUID_AMOUNT.get();
+    }
+
+    public int shellConstructorFluidCapacity() {
+        return SHELL_CONSTRUCTOR_FLUID_CAPACITY.get();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> shellConstructorFluidTypes() {
+        return (List<String>) SHELL_CONSTRUCTOR_FLUID_TYPES.get();
     }
 
     public long shellStorageCapacity() {

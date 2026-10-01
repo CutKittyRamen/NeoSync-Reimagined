@@ -119,11 +119,17 @@ dependencies {
     compileOnly("dev.ryanhcode.sable:sable-neoforge-1.21.1:${project.sable_version}") { transitive = false }
     localRuntime("dev.ryanhcode.sable:sable-neoforge-1.21.1:${project.sable_version}") { transitive = false }
     compileOnly("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:${project.sable_companion_version}") { transitive = false }
+    
+    localRuntime "maven.modrinth:create:${project.create_version}"
+
+    compileOnly "maven.modrinth:cc-tweaked:${project.cc_tweaked_version}"
+    localRuntime "maven.modrinth:cc-tweaked:${project.cc_tweaked_version}"
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21
+    options.compilerArgs << '--add-modules' << 'jdk.incubator.vector'
 }
 
 processResources {

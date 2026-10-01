@@ -1,4 +1,4 @@
-package com.breakinblocks.neosync.integration.jei;
+package com.breakinblocks.neosync.compat.jei;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;

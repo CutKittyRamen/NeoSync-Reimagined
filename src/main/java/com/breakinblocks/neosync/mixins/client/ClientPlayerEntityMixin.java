@@ -14,7 +14,7 @@ import com.breakinblocks.neosync.common.entity.LookingEntity;
 import com.breakinblocks.neosync.common.utils.BlockPosUtil;
 import com.breakinblocks.neosync.common.utils.NeoSyncDebug;
 import com.breakinblocks.neosync.common.utils.WorldUtil;
-import com.breakinblocks.neosync.integration.sable.NeoSyncSableCompat;
+import com.breakinblocks.neosync.compat.sable.NeoSyncSableCompat;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;

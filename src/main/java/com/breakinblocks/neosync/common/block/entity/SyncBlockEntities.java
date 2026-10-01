@@ -25,4 +25,14 @@ public class SyncBlockEntities {
             BLOCK_ENTITIES.register("treadmill",
                     () -> BlockEntityType.Builder.of(TreadmillBlockEntity::new,
                             SyncBlocks.TREADMILL.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SamplerBlockEntity>> SAMPLER =
+            BLOCK_ENTITIES.register("sampler",
+                    () -> BlockEntityType.Builder.of(SamplerBlockEntity::new,
+                            SyncBlocks.SAMPLER.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<InteractorBlockEntity>> INTERACTOR =
+            BLOCK_ENTITIES.register("interactor",
+                    () -> BlockEntityType.Builder.of(InteractorBlockEntity::new,
+                            SyncBlocks.INTERACTOR.get()).build(null));
 }
