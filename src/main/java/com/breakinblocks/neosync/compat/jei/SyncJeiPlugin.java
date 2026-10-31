@@ -1,0 +1,56 @@
+package com.breakinblocks.neosync.compat.jei;
+
+import mezz.jei.api.IModPlugin;
+import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.constants.VanillaTypes;
+import mezz.jei.api.registration.IRecipeCategoryRegistration;
+import mezz.jei.api.registration.IRecipeRegistration;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.fml.ModList;
+import com.breakinblocks.neosync.NeoSync;
+import com.breakinblocks.neosync.common.item.SyncItems;
+
+@JeiPlugin
+public class SyncJeiPlugin implements IModPlugin {
+    private static final ResourceLocation ID = NeoSync.locate("jei_plugin");
+
+    @Override
+    public ResourceLocation getPluginUid() {
+        return ID;
+    }
+
+    @Override
+    public void registerCategories(IRecipeCategoryRegistration registration) {
+        registration.addRecipeCategories(new TreadmillEnergyCategory(registration.getJeiHelpers().getGuiHelper()));
+    }
+
+    @Override
+    public void registerRecipes(IRecipeRegistration registration) {
+        // Info descriptions for the core items — gives players a hint about what each block does
+        // without needing to open the README.
+        registration.addIngredientInfo(new ItemStack(SyncItems.SYNC_CORE.get()), VanillaTypes.ITEM_STACK,
+                Component.translatable("jei.neosync.info.sync_core"));
+
+        registration.addIngredientInfo(new ItemStack(SyncItems.SHELL_CONSTRUCTOR.get()), VanillaTypes.ITEM_STACK,
+                Component.translatable("jei.neosync.info.shell_constructor"));
+
+        registration.addIngredientInfo(new ItemStack(SyncItems.SHELL_STORAGE.get()), VanillaTypes.ITEM_STACK,
+                Component.translatable("jei.neosync.info.shell_storage"));
+
+        registration.addIngredientInfo(new ItemStack(SyncItems.TREADMILL.get()), VanillaTypes.ITEM_STACK,
+                Component.translatable("jei.neosync.info.treadmill"));
+
+        if (ModList.get().isLoaded("computercraft")) {
+            registration.addIngredientInfo(new ItemStack(SyncItems.SAMPLER.get()), VanillaTypes.ITEM_STACK,
+                    Component.translatable("jei.neosync.info.sampler"));
+
+            registration.addIngredientInfo(new ItemStack(SyncItems.INTERACTOR.get()), VanillaTypes.ITEM_STACK,
+                    Component.translatable("jei.neosync.info.interactor"));
+        }
+
+        // Treadmill energy sources: one entry per configured entity
+        registration.addRecipes(TreadmillEnergyCategory.RECIPE_TYPE, TreadmillEnergyCategory.buildRecipes());
+    }
+}

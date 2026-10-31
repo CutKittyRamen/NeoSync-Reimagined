@@ -1,0 +1,26 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "neosync:block/sampler_vertical",
+      "x": 180
+    },
+    "facing=east": {
+      "model": "neosync:block/sampler",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "neosync:block/sampler"
+    },
+    "facing=south": {
+      "model": "neosync:block/sampler",
+      "y": 180
+    },
+    "facing=up": {
+      "model": "neosync:block/sampler_vertical"
+    },
+    "facing=west": {
+      "model": "neosync:block/sampler",
+      "y": 270
+    }
+  }
+}

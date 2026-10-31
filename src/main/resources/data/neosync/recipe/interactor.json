@@ -1,0 +1,30 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "computercraft"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "C": {
+      "item": "minecraft:cobblestone"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "S": {
+      "item": "neosync:sync_core"
+    }
+  },
+  "pattern": [
+    "CCC",
+    "CSC",
+    "CRC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "neosync:interactor"
+  }
+}

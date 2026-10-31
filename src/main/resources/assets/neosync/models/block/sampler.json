@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "neosync:block/sampler_front",
+    "side": "neosync:block/sampler_side",
+    "top": "neosync:block/sampler_top"
+  }
+}

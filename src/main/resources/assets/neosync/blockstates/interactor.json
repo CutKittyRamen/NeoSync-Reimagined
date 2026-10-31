@@ -1,0 +1,26 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "neosync:block/interactor_vertical",
+      "x": 180
+    },
+    "facing=east": {
+      "model": "neosync:block/interactor",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "neosync:block/interactor"
+    },
+    "facing=south": {
+      "model": "neosync:block/interactor",
+      "y": 180
+    },
+    "facing=up": {
+      "model": "neosync:block/interactor_vertical"
+    },
+    "facing=west": {
+      "model": "neosync:block/interactor",
+      "y": 270
+    }
+  }
+}
